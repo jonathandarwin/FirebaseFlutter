@@ -14,7 +14,13 @@ class HomeLayout extends StatelessWidget{
           appBar: AppBar(
             title: Text('Home'),        
           ),
-          body: ListData(),
+          body: Stack(
+            children: <Widget>[
+              ListData(),
+              NoData(),
+              Loading()
+            ],
+          ),
           floatingActionButton: ButtonAdd(),
         ),
       )    
@@ -22,80 +28,89 @@ class HomeLayout extends StatelessWidget{
   }
 }
 
+class Loading extends StatelessWidget{
+  @override
+  Widget build(BuildContext context){
+    final _provider = Provider.of<HomeProvider>(context);
+
+    return Visibility(
+      visible: _provider.listUser == null ? true :  false,
+      child: Center(
+        child: Text('Loading...'),
+      ),
+    );
+  }
+}
+
+class NoData extends StatelessWidget{
+  @override
+  Widget build(BuildContext context){
+    final _provider = Provider.of<HomeProvider>(context);
+
+    return Visibility(
+      visible: _provider.listUser.length == 0 ? true : false,
+      child: Center(      
+        child: Text('No Data'),
+      ),
+    );
+  }
+}
+
 class ListData extends StatelessWidget{
   @override
   Widget build(BuildContext context){
-    HomeProvider _provider = Provider.of<HomeProvider>(context);    
+    HomeProvider _provider = Provider.of<HomeProvider>(context);  
 
-    return FutureBuilder(
-      future: _provider.getListData(),            
-      builder: (context, snapshot) {
-        if(snapshot.connectionState == ConnectionState.waiting){
-          return Center(
-            child: Text('Loading...'),
-          );
-        }  
-        else{          
-          List<User> listUser = snapshot.data;
-
-          if(listUser.length == 0){
-            return Center(
-              child: Text('No Data'),
-            );
-          }
-
-          return ListItem(listUser);
-        }        
-      },
-    ); 
+    _provider.getListData();
+    return ListItem();    
   }
 }
 
-class ListItem extends StatelessWidget{
-  final List<User> listUser;
-  ListItem(this.listUser);
-
+class ListItem extends StatelessWidget{  
   @override
   Widget build(BuildContext context){
-    return ListView.separated(
-              separatorBuilder: (context, i) => Padding(
-              padding: EdgeInsets.all(10.0),
-              child: Divider(
-                color: Colors.black,
-              ),
-            ),
-            itemCount: listUser.length,
-            itemBuilder: (context, i){
-              return GestureDetector(
-                onTap: () => ButtonAdd.gotoInsertUpdate(context, listUser[i]),
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Row(                    
-                    children: <Widget>[
-                      // DATA 
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[                  
-                            TextName(listUser[i].name),
-                            TextEmail(listUser[i].email)
-                          ],
-                        ),
-                      ),
-                      // DELETE
-                      Expanded(
-                        flex: 1,
-                        child: IconDelete(listUser[i]),
-                      )
+    final _provider = Provider.of<HomeProvider>(context);            
+
+    return ListView.separated(      
+        separatorBuilder: (context, i) => Padding(
+        padding: EdgeInsets.all(10.0),
+        child: Divider(
+          color: Colors.black,
+        ),
+      ),
+      itemCount: _provider.listUser.length,
+      itemBuilder: (context, i){        
+        return GestureDetector(
+          onTap: () => ButtonAdd.gotoInsertUpdate(context, _provider.listUser[i]),
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Row(                    
+              children: <Widget>[
+                // DATA 
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[                  
+                      TextName(_provider.listUser[i].name),
+                      TextEmail(_provider.listUser[i].email)
                     ],
-                  )
+                  ),
                 ),
-              );
-            },
-          );
+                // DELETE
+                Expanded(
+                  flex: 1,
+                  child: IconDelete(_provider.listUser[i]),
+                )
+              ],
+            )
+          ),
+        );
+      },
+    );
   }
 }
+
 
 class TextEmail extends StatelessWidget{
   final String email;
@@ -162,13 +177,8 @@ class IconDelete extends StatelessWidget{
         actions: <Widget>[
           FlatButton(
             onPressed: (){
-              if(_provider.deleteUser(user)){                
-                Navigator.of(context).pop();
-                Scaffold.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Success'),
-                  )
-                );
+              if(_provider.deleteUser(user)){                                
+                Navigator.of(context).pop();                
               }
             },
             child: Text('Yes'),

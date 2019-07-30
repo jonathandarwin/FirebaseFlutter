@@ -8,20 +8,35 @@ class HomeProvider extends ChangeNotifier{
   UserRepository userRepository = UserRepository();
 
   get listUser => _listUser;
-  set listUser(List<User> listUser) => this._listUser = listUser;
+  set listUser(List<User> listUser){
+    this._listUser = listUser;
+    notifyListeners();
+  }
   
-
-  Future<List<User>> getListData() async {
+  Future<List<User>> getListData() async {        
     DataSnapshot result = await userRepository.getListData();
-    List<User> listUser = List<User>();
+    List<User> listTemp = List<User>();
     if(result.value != null){
       Iterable list = result.value.values;
       for(var data in list){
-        listUser.add(User.fromJson(data));
+        listTemp.add(User.fromJson(data));
       }
     }
-    return listUser;
+    listUser = listTemp;  
+    return listUser;  
   }
+
+  // Future<List<User>> getListData() async {
+  //   DataSnapshot result = await userRepository.getListData();
+  //   List<User> listUser = List<User>();
+  //   if(result.value != null){
+  //     Iterable list = result.value.values;
+  //     for(var data in list){
+  //       listUser.add(User.fromJson(data));
+  //     }
+  //   }
+  //   return listUser;
+  // }
 
   bool deleteUser(User user) {
     return userRepository.deleteUser(user);
