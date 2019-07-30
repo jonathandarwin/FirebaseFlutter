@@ -34,7 +34,7 @@ class Loading extends StatelessWidget{
     final _provider = Provider.of<HomeProvider>(context);
 
     return Visibility(
-      visible: _provider.listUser == null ? true :  false,
+      visible: _provider.showLoading,
       child: Center(
         child: Text('Loading...'),
       ),

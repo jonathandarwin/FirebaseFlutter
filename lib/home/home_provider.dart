@@ -6,14 +6,22 @@ import 'package:flutter/foundation.dart';
 class HomeProvider extends ChangeNotifier{
   List<User> _listUser = List<User>();
   UserRepository userRepository = UserRepository();
+  bool _showLoading;
 
   get listUser => _listUser;
   set listUser(List<User> listUser){
     this._listUser = listUser;
     notifyListeners();
   }
+
+  get showLoading => _showLoading;
+  set showLoading(bool showLoading){
+    this._showLoading = showLoading;
+    notifyListeners();
+  }
   
   Future<List<User>> getListData() async {        
+    showLoading = true;
     DataSnapshot result = await userRepository.getListData();
     List<User> listTemp = List<User>();
     if(result.value != null){
@@ -21,6 +29,10 @@ class HomeProvider extends ChangeNotifier{
       for(var data in list){
         listTemp.add(User.fromJson(data));
       }
+      showLoading = false;
+    }
+    else{
+      showLoading = false;
     }
     listUser = listTemp;  
     return listUser;  
