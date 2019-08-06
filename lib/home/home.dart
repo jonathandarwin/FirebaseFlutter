@@ -16,9 +16,9 @@ class HomeLayout extends StatelessWidget{
           ),
           body: Stack(
             children: <Widget>[
-              ListData(),
-              NoData(),
-              Loading()
+              // Loading(),
+              // NoData(),              
+              ListData(),                            
             ],
           ),
           floatingActionButton: ButtonAdd(),
@@ -31,13 +31,16 @@ class HomeLayout extends StatelessWidget{
 class Loading extends StatelessWidget{
   @override
   Widget build(BuildContext context){
-    final _provider = Provider.of<HomeProvider>(context);
+    // HomeProvider _provider = Provider.of<HomeProvider>(context);
+    // return Visibility(
+    //   visible: _provider.showLoading,
+    //   child: Center(
+    //     child: CircularProgressIndicator(),
+    //   ),
+    // );
 
-    return Visibility(
-      visible: _provider.showLoading,
-      child: Center(
-        child: Text('Loading...'),
-      ),
+    return Center(
+      child: CircularProgressIndicator(),
     );
   }
 }
@@ -45,13 +48,17 @@ class Loading extends StatelessWidget{
 class NoData extends StatelessWidget{
   @override
   Widget build(BuildContext context){
-    final _provider = Provider.of<HomeProvider>(context);
+    // HomeProvider _provider = Provider.of<HomeProvider>(context);
 
-    return Visibility(
-      visible: _provider.listUser.length == 0 ? true : false,
-      child: Center(      
-        child: Text('No Data'),
-      ),
+    // return Visibility(
+    //   visible: _provider.showNoData,
+    //   child: Center(      
+    //     child: Text('No Data'),
+    //   ),
+    // );
+
+    return Center(      
+      child: Text('No Data'),
     );
   }
 }
@@ -60,17 +67,29 @@ class ListData extends StatelessWidget{
   @override
   Widget build(BuildContext context){
     HomeProvider _provider = Provider.of<HomeProvider>(context);  
-
-    _provider.getListData();
-    return ListItem();    
+    
+    return FutureBuilder(
+      future: _provider.getListData(),
+      initialData: null,
+      builder: (context, snapshot){
+        if(snapshot.connectionState == ConnectionState.done){
+          if(snapshot.data == HomeProvider.SHOW_DATA){
+            return ListItem();
+          }
+          else if (snapshot.data == HomeProvider.NO_DATA){
+            return NoData();
+          }
+        }
+        return Loading();
+      },
+    ); 
   }
 }
 
 class ListItem extends StatelessWidget{  
   @override
   Widget build(BuildContext context){
-    final _provider = Provider.of<HomeProvider>(context);            
-
+    HomeProvider _provider = Provider.of<HomeProvider>(context);                
     return ListView.separated(      
         separatorBuilder: (context, i) => Padding(
         padding: EdgeInsets.all(10.0),
@@ -81,7 +100,7 @@ class ListItem extends StatelessWidget{
       itemCount: _provider.listUser.length,
       itemBuilder: (context, i){        
         return GestureDetector(
-          onTap: () => ButtonAdd.gotoInsertUpdate(context, _provider.listUser[i]),
+          onTap: () => ButtonAdd.gotoInsertUpdate(context, _provider, _provider.listUser[i]),
           child: Padding(
             padding: EdgeInsets.all(20.0),
             child: Row(                    
@@ -177,8 +196,10 @@ class IconDelete extends StatelessWidget{
         actions: <Widget>[
           FlatButton(
             onPressed: (){
-              if(_provider.deleteUser(user)){                                
-                Navigator.of(context).pop();                
+              if(_provider.deleteUser(user)){
+                Navigator.of(context).pop();
+                // _provider.getListData();
+                _provider.refresh();
               }
             },
             child: Text('Yes'),
@@ -198,17 +219,21 @@ class IconDelete extends StatelessWidget{
 class ButtonAdd extends StatelessWidget{
   @override
   Widget build(BuildContext context){
+    HomeProvider _provider = Provider.of<HomeProvider>(context, listen:false);
     return FloatingActionButton(
-      onPressed: () => gotoInsertUpdate(context, null),
+      onPressed: () => gotoInsertUpdate(context, _provider, null),
       child: Icon(Icons.add),
     );
   }
 
-  static void gotoInsertUpdate(BuildContext context, User user){
+  static void gotoInsertUpdate(BuildContext context, HomeProvider provider, User user){
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => InsertUpdateLayout(user)
       )
-    );
+    ).then((value){
+      // provider.getListData();
+      provider.refresh();
+    });
   }
 }
